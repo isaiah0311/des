@@ -1,0 +1,30 @@
+Language: C
+
+IndentWidth: 4
+UseTab: Never
+
+BreakBeforeBraces: Attach
+
+SpaceBeforeParens: ControlStatements
+SpaceAfterCStyleCast: true
+SpacesInParentheses: false
+Cpp11BracedListStyle: false
+
+ColumnLimit: 80
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: false
+BreakConstructorInitializersBeforeComma: true
+BreakStringLiterals: true
+ReflowComments: true
+PenaltyBreakBeforeFirstCallParameter: 2
+PenaltyBreakAssignment: 1
+PenaltyBreakString: 1
+PenaltyBreakAfterComma: 0
+ContinuationIndentWidth: 4
+AlignOperands: false
+AlignAfterOpenBracket: DontAlign
+
+PointerAlignment: Left
+DerivePointerAlignment: false
+
+InsertNewlineAtEOF: true

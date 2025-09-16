@@ -1,0 +1,41 @@
+{
+    "editor.formatOnSave": true,
+    "editor.rulers": [
+        80
+    ],
+    "files.eol": "auto",
+    "task.autoDetect": "off",
+    "C_Cpp.clang_format_style": "file",
+    "[c]": {
+        "editor.defaultFormatter": "ms-vscode.cpptools",
+    },
+    "[jsonc]": {
+        "editor.insertSpaces": true,
+        "editor.tabSize": 4,
+        "editor.wordWrap": "wordWrapColumn",
+        "editor.wordWrapColumn": 80,
+        "editor.wrappingIndent": "indent",
+        "files.insertFinalNewline": true
+    },
+    "[markdown]": {
+        "editor.insertSpaces": true,
+        "editor.tabSize": 4,
+        "files.insertFinalNewline": true
+    },
+    "[xml]": {
+        "editor.insertSpaces": true,
+        "editor.tabSize": 2,
+        "editor.wordWrap": "wordWrapColumn",
+        "editor.wordWrapColumn": 80,
+        "editor.wrappingIndent": "indent",
+        "files.insertFinalNewline": true
+    },
+    "[makefile]": {
+        "editor.insertSpaces": false,
+        "editor.tabSize": 4,
+        "editor.wordWrap": "wordWrapColumn",
+        "editor.wordWrapColumn": 80,
+        "editor.wrappingIndent": "indent",
+        "files.insertFinalNewline": true
+    }
+}
