@@ -37,5 +37,8 @@
         "editor.wordWrapColumn": 80,
         "editor.wrappingIndent": "indent",
         "files.insertFinalNewline": true
+    },
+    "files.associations": {
+        "stdint.h": "c"
     }
 }
