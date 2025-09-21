@@ -11,11 +11,11 @@
 #include <stdint.h>
 
 /**
- * Generates all sixteen 48-bit subkeys needed for encryption.
- *
- * \param[in] key 64-bit original key.
- * \param[out] subkeys All sixteen 48-bit subkeys, stored as 64-bit values.
+ * Encrypts a plaintext string using DES.
+ * 
+ * \param[in] key Encryption key.
+ * \param[in] plaintext Data to be encrypted.
  */
-void generate_subkeys(uint64_t key, uint64_t subkeys[16]);
+void des_encrypt(uint64_t key, const char* plaintext);
 
 #endif

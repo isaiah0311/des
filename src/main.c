@@ -5,7 +5,6 @@
  * Entry point for the project.
  */
 
-#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,14 +14,15 @@
 #define BUFFER_SIZE 1024
 
 /**
- * Prompts the user for a key and then generates the subkeys.
+ * Prompts the user for a key and plaintext.
  *
  * \return Exit code.
  */
 int main() {
-    printf("Enter key: ");
     char buffer[BUFFER_SIZE] = { 0 };
-    char* result = fgets(buffer, sizeof(buffer) - 1, stdin);
+
+    printf("Enter key: ");
+    char* result = fgets(buffer, sizeof(buffer), stdin);
     if (!result) {
         fprintf(stderr, "[ERROR] Failed to read key.\n");
         return EXIT_FAILURE;
@@ -37,12 +37,17 @@ int main() {
         return EXIT_FAILURE;
     }
 
-    uint64_t subkeys[16] = { 0 };
-    generate_subkeys(key, subkeys);
+    memset(buffer, 0, sizeof(buffer));
 
-    for (int i = 0; i < 16; ++i) {
-        printf("Subkey %2d: 0x%012" PRIX64 "\n", i + 1, subkeys[i]);
+    printf("Enter plaintext: ");
+    result = fgets(buffer, sizeof(buffer), stdin);
+    if (!result) {
+        fprintf(stderr, "[ERROR] Failed to read plaintext.\n");
+        return EXIT_FAILURE;
     }
 
+    buffer[strcspn(buffer, "\r\n")] = 0;
+
+    des_encrypt(key, buffer);
     return EXIT_SUCCESS;
 }
