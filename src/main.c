@@ -21,19 +21,24 @@
 int main() {
     char buffer[BUFFER_SIZE] = { 0 };
 
-    printf("Enter key: ");
+    printf("Enter key: 0x");
     char* result = fgets(buffer, sizeof(buffer), stdin);
     if (!result) {
         fprintf(stderr, "[ERROR] Failed to read key.\n");
         return EXIT_FAILURE;
     }
 
-    buffer[strcspn(buffer, "\r\n")] = 0;
+    buffer[strcspn(buffer, "\n")] = 0;
+
+    if (strlen(buffer) > 16) {
+        fprintf(stderr, "[ERROR] Key cannot be more than 8 bytes.\n");
+        return EXIT_FAILURE;
+    }
 
     char* endptr = NULL;
-    uint64_t key = strtoull(buffer, &endptr, 10);
+    uint64_t key = strtoull(buffer, &endptr, 16);
     if (endptr == buffer) {
-        fprintf(stderr, "[ERROR] Key was not a number.\n");
+        fprintf(stderr, "[ERROR] Key is not a valid number.\n");
         return EXIT_FAILURE;
     }
 
