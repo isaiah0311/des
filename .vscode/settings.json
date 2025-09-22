@@ -9,6 +9,9 @@
     "[c]": {
         "editor.defaultFormatter": "ms-vscode.cpptools",
     },
+    "[h]": {
+        "editor.defaultFormatter": "ms-vscode.cpptools",
+    },
     "[jsonc]": {
         "editor.insertSpaces": true,
         "editor.tabSize": 4,
@@ -37,8 +40,5 @@
         "editor.wordWrapColumn": 80,
         "editor.wrappingIndent": "indent",
         "files.insertFinalNewline": true
-    },
-    "files.associations": {
-        "stdint.h": "c"
     }
 }

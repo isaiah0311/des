@@ -7,7 +7,6 @@
 
 #include "des.h"
 
-#include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -284,18 +283,22 @@ static uint64_t des_final_permutation(uint64_t block) {
  * Splits the plaintext into 64-bit blocks, padding the final block with zeroes,
  * applies an initial permutation, performs 16 rounds of encryption using
  * subkeys derived from the provided key, and then applies a final permutation
- * to produce the encrypted output. Each encrypted block is printed in
- * hexadecimal format.
+ * to produce the encrypted output.
  *
- * \param key Encryption key used to generate subkeys.
- * \param plaintext Data to be encrypted.
+ * \param[in] key Encryption key used to generate subkeys.
+ * \param[in] plaintext Data to be encrypted.
+ * \param[in] byte_count Number of bytes the ciphertext is.
+ * \param[out] ciphertext Encrypted data.
+ * \return Number of encrypted bytes.
  */
-void des_encrypt(uint64_t key, const char* plaintext) {
+size_t des_encrypt(uint64_t key, const char* plaintext, size_t byte_count,
+    uint8_t* ciphertext) {
     uint64_t subkeys[16] = { 0 };
     des_generate_subkeys(key, subkeys);
 
     const size_t char_count = strlen(plaintext);
-    const size_t block_count = (char_count + 7) / 8;
+    const size_t block_count =
+        byte_count < (char_count + 7) / 8 ? byte_count : (char_count + 7) / 8;
 
     for (size_t i = 0; i < block_count; ++i) {
         uint8_t bytes[8] = { 0 };
@@ -320,6 +323,18 @@ void des_encrypt(uint64_t key, const char* plaintext) {
 
         const uint64_t swapped = ((uint64_t) right << 32) | left;
         const uint64_t encrypted = des_final_permutation(swapped);
-        printf("0x%012" PRIX64 "\n", encrypted);
+
+        for (int j = 0; j < 8; ++j) {
+            ciphertext[i * 8] = (uint8_t) ((encrypted >> 56) & 0xFF);
+            ciphertext[i * 8 + 1] = (uint8_t) ((encrypted >> 48) & 0xFF);
+            ciphertext[i * 8 + 2] = (uint8_t) ((encrypted >> 40) & 0xFF);
+            ciphertext[i * 8 + 3] = (uint8_t) ((encrypted >> 32) & 0xFF);
+            ciphertext[i * 8 + 4] = (uint8_t) ((encrypted >> 24) & 0xFF);
+            ciphertext[i * 8 + 5] = (uint8_t) ((encrypted >> 16) & 0xFF);
+            ciphertext[i * 8 + 6] = (uint8_t) ((encrypted >> 8) & 0xFF);
+            ciphertext[i * 8 + 7] = (uint8_t) (encrypted & 0xFF);
+        }
     }
+
+    return block_count * 8;
 }
