@@ -115,6 +115,22 @@ static void des_generate_subkeys(uint64_t key, uint64_t subkeys[16]) {
 }
 
 /**
+ * Constructs a 64-bit block from 8 bytes.
+ *
+ * \param[in] bytes Bytes to construct with.
+ * \return 64-bit block.
+ */
+uint64_t des_construct_block(const uint8_t bytes[8]) {
+    uint64_t block = 0;
+    for (int j = 0; j < 8; ++j) {
+        block <<= 8;
+        block |= bytes[j];
+    }
+
+    return block;
+}
+
+/**
  * Rearranges the bits of a block according to the initial permutation
  * table. Each bit from the original block is extracted and placed into its
  * new position to produce the permuted block.
@@ -280,25 +296,48 @@ static uint64_t des_final_permutation(uint64_t block) {
 }
 
 /**
- * Splits the plaintext into 64-bit blocks, padding the final block with zeroes,
- * applies an initial permutation, performs 16 rounds of encryption using
- * subkeys derived from the provided key, and then applies a final permutation
- * to produce the encrypted output.
+ * Takes a 64-bit block and applies an initial permutation. The permuted block
+ * is than put through 16 feistel rounds and then a final permutation.
+ *
+ * \param[in] subkeys Sixteen 48-bit keys for each of the feistel rounds.
+ * \param[in] block Data block.
+ * \return Resulting block.
+ */
+uint64_t des(const uint64_t subkeys[16], uint64_t block) {
+    const uint64_t permuted = des_initial_permutation(block);
+
+    uint32_t left, right;
+    des_split_block(permuted, &left, &right);
+
+    for (int j = 0; j < 16; ++j) {
+        des_round(&left, &right, subkeys[j]);
+    }
+
+    const uint64_t swapped = ((uint64_t) right << 32) | left;
+    return des_final_permutation(swapped);
+}
+
+/**
+ * Splits the plaintext into 64-bit blocks, padding the final block with zeroes.
+ * Each of the blocks are encrypted using the key and placed into the ciphertext
+ * buffer.
  *
  * \param[in] key Encryption key used to generate subkeys.
  * \param[in] plaintext Data to be encrypted.
- * \param[in] byte_count Number of bytes the ciphertext is.
+ * \param[in] byte_count Number of bytes in ciphertext.
  * \param[out] ciphertext Encrypted data.
  * \return Number of encrypted bytes.
  */
 size_t des_encrypt(uint64_t key, const char* plaintext, size_t byte_count,
     uint8_t* ciphertext) {
+    memset(ciphertext, 0, byte_count);
+
     uint64_t subkeys[16] = { 0 };
     des_generate_subkeys(key, subkeys);
 
     const size_t char_count = strlen(plaintext);
     const size_t block_count =
-        byte_count < (char_count + 7) / 8 ? byte_count : (char_count + 7) / 8;
+        (byte_count < char_count ? (byte_count + 7) / 8 : (char_count + 7) / 8);
 
     for (size_t i = 0; i < block_count; ++i) {
         uint8_t bytes[8] = { 0 };
@@ -306,35 +345,66 @@ size_t des_encrypt(uint64_t key, const char* plaintext, size_t byte_count,
             (i * 8 + 8 <= char_count) ? 8 : char_count - i * 8;
         memcpy(bytes, plaintext + i * 8, copy_count);
 
-        uint64_t block = 0;
-        for (int j = 0; j < 8; ++j) {
-            block <<= 8;
-            block |= bytes[j];
-        }
+        const uint64_t block = des_construct_block(bytes);
+        const uint64_t encrypted = des(subkeys, block);
 
-        const uint64_t permuted = des_initial_permutation(block);
-
-        uint32_t left, right;
-        des_split_block(permuted, &left, &right);
-
-        for (int j = 0; j < 16; ++j) {
-            des_round(&left, &right, subkeys[j]);
-        }
-
-        const uint64_t swapped = ((uint64_t) right << 32) | left;
-        const uint64_t encrypted = des_final_permutation(swapped);
-
-        for (int j = 0; j < 8; ++j) {
-            ciphertext[i * 8] = (uint8_t) ((encrypted >> 56) & 0xFF);
-            ciphertext[i * 8 + 1] = (uint8_t) ((encrypted >> 48) & 0xFF);
-            ciphertext[i * 8 + 2] = (uint8_t) ((encrypted >> 40) & 0xFF);
-            ciphertext[i * 8 + 3] = (uint8_t) ((encrypted >> 32) & 0xFF);
-            ciphertext[i * 8 + 4] = (uint8_t) ((encrypted >> 24) & 0xFF);
-            ciphertext[i * 8 + 5] = (uint8_t) ((encrypted >> 16) & 0xFF);
-            ciphertext[i * 8 + 6] = (uint8_t) ((encrypted >> 8) & 0xFF);
-            ciphertext[i * 8 + 7] = (uint8_t) (encrypted & 0xFF);
-        }
+        ciphertext[(i * 8)] = (uint8_t) ((encrypted >> 56) & 0xFF);
+        ciphertext[(i * 8) + 1] = (uint8_t) ((encrypted >> 48) & 0xFF);
+        ciphertext[(i * 8) + 2] = (uint8_t) ((encrypted >> 40) & 0xFF);
+        ciphertext[(i * 8) + 3] = (uint8_t) ((encrypted >> 32) & 0xFF);
+        ciphertext[(i * 8) + 4] = (uint8_t) ((encrypted >> 24) & 0xFF);
+        ciphertext[(i * 8) + 5] = (uint8_t) ((encrypted >> 16) & 0xFF);
+        ciphertext[(i * 8) + 6] = (uint8_t) ((encrypted >> 8) & 0xFF);
+        ciphertext[(i * 8) + 7] = (uint8_t) (encrypted & 0xFF);
     }
 
     return block_count * 8;
+}
+
+/**
+ * Splits the ciphertext into 64-bit blocks, padding the final block with
+ * zeroes. Each of the blocks are decrypted using the key and placed into the
+ * plaintext buffer.
+ *
+ * \param[in] key Encryption key used to generate subkeys.
+ * \param[in] ciphertext_count Number of bytes in ciphertext.
+ * \param[in] ciphertext Data to be decrypted.
+ * \param[in] plaintext_count Number of bytes in plaintext.
+ * \param[out] plaintext Decrypted data.
+ */
+void des_decrypt(uint64_t key, size_t ciphertext_count, uint8_t* ciphertext,
+    size_t plaintext_count, char* plaintext) {
+    memset(plaintext, 0, plaintext_count);
+
+    uint64_t subkeys[16] = { 0 };
+    des_generate_subkeys(key, subkeys);
+
+    for (int i = 0; i < 8; ++i) {
+        uint64_t subkey = subkeys[i];
+        subkeys[i] = subkeys[15 - i];
+        subkeys[15 - i] = subkey;
+    }
+
+    const size_t block_count =
+        (ciphertext_count < plaintext_count ? (ciphertext_count + 7) / 8
+                                            : (plaintext_count + 7) / 8);
+
+    for (size_t i = 0; i < block_count; ++i) {
+        uint8_t bytes[8] = { 0 };
+        const size_t copy_count =
+            (i * 8 + 8 <= ciphertext_count) ? 8 : ciphertext_count - i * 8;
+        memcpy(bytes, ciphertext + i * 8, copy_count);
+
+        const uint64_t block = des_construct_block(bytes);
+        const uint64_t decrypted = des(subkeys, block);
+
+        plaintext[(i * 8)] = (char) ((decrypted >> 56) & 0xFF);
+        plaintext[(i * 8) + 1] = (char) ((decrypted >> 48) & 0xFF);
+        plaintext[(i * 8) + 2] = (char) ((decrypted >> 40) & 0xFF);
+        plaintext[(i * 8) + 3] = (char) ((decrypted >> 32) & 0xFF);
+        plaintext[(i * 8) + 4] = (char) ((decrypted >> 24) & 0xFF);
+        plaintext[(i * 8) + 5] = (char) ((decrypted >> 16) & 0xFF);
+        plaintext[(i * 8) + 6] = (char) ((decrypted >> 8) & 0xFF);
+        plaintext[(i * 8) + 7] = (char) (decrypted & 0xFF);
+    }
 }

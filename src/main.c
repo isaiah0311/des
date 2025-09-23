@@ -54,14 +54,16 @@ int main() {
     buffer[strcspn(buffer, "\r\n")] = 0;
 
     uint8_t ciphertext[BUFFER_SIZE] = { 0 };
-    const size_t byte_count =
-        des_encrypt(key, buffer, sizeof(ciphertext), ciphertext);
+    const size_t byte_count = des_encrypt(key, buffer, BUFFER_SIZE, ciphertext);
 
-    printf("0x");
+    printf("\nCiphertext: 0x");
     for (size_t i = 0; i < byte_count; ++i) {
         printf("%02X", ciphertext[i]);
     }
 
-    printf("\n");
+    char plaintext[BUFFER_SIZE] = { 0 };
+    des_decrypt(key, byte_count, ciphertext, BUFFER_SIZE, plaintext);
+    printf("\nPlaintext: %s\n", plaintext);
+
     return EXIT_SUCCESS;
 }
