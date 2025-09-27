@@ -318,9 +318,8 @@ uint64_t des(const uint64_t subkeys[16], uint64_t block) {
 }
 
 /**
- * Splits the plaintext into 64-bit blocks, padding the final block with zeroes.
- * Each of the blocks are encrypted using the key and placed into the ciphertext
- * buffer.
+ * Splits the plaintext into 64-bit blocks. Each of the blocks are encrypted
+ * using the key and placed into the ciphertext buffer.
  *
  * \param[in] key Encryption key used to generate subkeys.
  * \param[in] plaintext Data to be encrypted.
@@ -335,36 +334,37 @@ size_t des_encrypt(uint64_t key, const char* plaintext, size_t byte_count,
     uint64_t subkeys[16] = { 0 };
     des_generate_subkeys(key, subkeys);
 
+    size_t offset = 0;
     const size_t char_count = strlen(plaintext);
-    const size_t block_count =
-        (byte_count < char_count ? (byte_count + 7) / 8 : (char_count + 7) / 8);
 
-    for (size_t i = 0; i < block_count; ++i) {
+    while (offset + 8 <= byte_count && offset < char_count + 1) {
         uint8_t bytes[8] = { 0 };
-        const size_t copy_count =
-            (i * 8 + 8 <= char_count) ? 8 : char_count - i * 8;
-        memcpy(bytes, plaintext + i * 8, copy_count);
+
+        const size_t remaining = char_count > offset ? char_count - offset : 0;
+        const size_t copy_count = (remaining >= 8) ? 8 : remaining;
+        memcpy(bytes, plaintext + offset, copy_count);
+
+        const uint8_t pad_value = 8 - (uint8_t) copy_count;
+        for (size_t i = copy_count; i < 8; ++i) {
+            bytes[i] = pad_value;
+        }
 
         const uint64_t block = des_construct_block(bytes);
         const uint64_t encrypted = des(subkeys, block);
 
-        ciphertext[(i * 8)] = (uint8_t) ((encrypted >> 56) & 0xFF);
-        ciphertext[(i * 8) + 1] = (uint8_t) ((encrypted >> 48) & 0xFF);
-        ciphertext[(i * 8) + 2] = (uint8_t) ((encrypted >> 40) & 0xFF);
-        ciphertext[(i * 8) + 3] = (uint8_t) ((encrypted >> 32) & 0xFF);
-        ciphertext[(i * 8) + 4] = (uint8_t) ((encrypted >> 24) & 0xFF);
-        ciphertext[(i * 8) + 5] = (uint8_t) ((encrypted >> 16) & 0xFF);
-        ciphertext[(i * 8) + 6] = (uint8_t) ((encrypted >> 8) & 0xFF);
-        ciphertext[(i * 8) + 7] = (uint8_t) (encrypted & 0xFF);
+        for (int i = 0; i < 8; ++i) {
+            ciphertext[offset + i] = (encrypted >> (56 - i * 8)) & 0xFF;
+        }
+
+        offset += 8;
     }
 
-    return block_count * 8;
+    return offset;
 }
 
 /**
- * Splits the ciphertext into 64-bit blocks, padding the final block with
- * zeroes. Each of the blocks are decrypted using the key and placed into the
- * plaintext buffer.
+ * Splits the ciphertext into 64-bit blocks. Each of the blocks are decrypted
+ * using the key and placed into the plaintext buffer.
  *
  * \param[in] key Encryption key used to generate subkeys.
  * \param[in] ciphertext_count Number of bytes in ciphertext.
@@ -385,26 +385,18 @@ void des_decrypt(uint64_t key, size_t ciphertext_count, uint8_t* ciphertext,
         subkeys[15 - i] = subkey;
     }
 
-    const size_t block_count =
-        (ciphertext_count < plaintext_count ? (ciphertext_count + 7) / 8
-                                            : (plaintext_count + 7) / 8);
-
-    for (size_t i = 0; i < block_count; ++i) {
+    size_t offset = 0;
+    while (offset + 8 <= plaintext_count && offset < ciphertext_count) {
         uint8_t bytes[8] = { 0 };
-        const size_t copy_count =
-            (i * 8 + 8 <= ciphertext_count) ? 8 : ciphertext_count - i * 8;
-        memcpy(bytes, ciphertext + i * 8, copy_count);
+        memcpy(bytes, ciphertext + offset, 8);
 
         const uint64_t block = des_construct_block(bytes);
         const uint64_t decrypted = des(subkeys, block);
 
-        plaintext[(i * 8)] = (char) ((decrypted >> 56) & 0xFF);
-        plaintext[(i * 8) + 1] = (char) ((decrypted >> 48) & 0xFF);
-        plaintext[(i * 8) + 2] = (char) ((decrypted >> 40) & 0xFF);
-        plaintext[(i * 8) + 3] = (char) ((decrypted >> 32) & 0xFF);
-        plaintext[(i * 8) + 4] = (char) ((decrypted >> 24) & 0xFF);
-        plaintext[(i * 8) + 5] = (char) ((decrypted >> 16) & 0xFF);
-        plaintext[(i * 8) + 6] = (char) ((decrypted >> 8) & 0xFF);
-        plaintext[(i * 8) + 7] = (char) (decrypted & 0xFF);
+        for (int i = 0; i < 8; ++i) {
+            plaintext[offset + i] = (decrypted >> (56 - i * 8)) & 0xFF;
+        }
+
+        offset += 8;
     }
 }
