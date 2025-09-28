@@ -16,15 +16,15 @@ AllowShortIfStatementsOnASingleLine: false
 BreakConstructorInitializersBeforeComma: true
 BreakStringLiterals: true
 ReflowComments: true
-PenaltyBreakBeforeFirstCallParameter: 2
-PenaltyBreakAssignment: 1
-PenaltyBreakString: 1
-PenaltyBreakAfterComma: 0
+PenaltyBreakBeforeFirstCallParameter: 1000
+PenaltyBreakAssignment: 100
+PenaltyBreakString: 100
+PenaltyBreakAfterComma: 1
 ContinuationIndentWidth: 4
 AlignOperands: false
 AlignAfterOpenBracket: DontAlign
+BinPackArguments: true
+AllowAllArgumentsOnNextLine: false
 
 PointerAlignment: Left
 DerivePointerAlignment: false
-
-InsertNewlineAtEOF: true
