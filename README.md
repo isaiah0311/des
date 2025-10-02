@@ -11,6 +11,7 @@ An implementation of DES in C.
 │   └── release                <- Binaries compiled with optimization
 │       ├── x64                <- 64-bit release binaries
 │       └── x86                <- 32-bit release binaries
+├── res                        <- Resource files
 ├── src                        <- Source files
 ├── .clang-format              <- Coding format file
 ├── .gitignore                 <- Repository ignores
@@ -58,8 +59,16 @@ Launch" to use GDB from the drop-down menu.
 5. Select a platform.
 ### Command Line
 1. Navigate to the root of the project.
-2. Run `bin\{ debug | release }\{ x86 | x64 }\des.exe` if you are on Windows or
-`./bin/{ debug | release }\{ x86 | x64 }/des` if you are on Linux.
+2. Run `bin\{ debug | release }\{ x86 | x64 }\des.exe -m { enc | dec } -i
+input_file [ -o output_file ]` if you are on Windows or `./bin/{ debug | release
+}\{ x86 | x64 }/des -m { enc | dec } -i input_file [ -o output_file ]` if you
+are on Linux.
+
+
+**Note:** A plaintext and a ciphertext file has been provided in the resource
+folder. If no output file is given, the program will print the output instead.
+If run in VS Code, the program encrypts res/plaintext.txt and places the output
+into res/ciphertext.des.
 
 ## License
 This project is licensed under the [MIT License](LICENSE).

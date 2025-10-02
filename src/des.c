@@ -7,7 +7,6 @@
 
 #include "des.h"
 
-#include <stdio.h>
 #include <string.h>
 
 static const int pc1[] = { 57, 49, 41, 33, 25, 17, 9, 1, 58, 50, 42, 34, 26, 18,
@@ -322,30 +321,29 @@ uint64_t des(const uint64_t subkeys[16], uint64_t block) {
  * using the key and placed into the ciphertext buffer.
  *
  * \param[in] key Encryption key used to generate subkeys.
- * \param[in] plaintext Data to be encrypted.
+ * \param[in] plaintext File to be encrypted.
  * \param[in] byte_count Number of bytes in ciphertext.
  * \param[out] ciphertext Encrypted data.
  * \return Number of encrypted bytes.
  */
-size_t des_encrypt(uint64_t key, const char* plaintext, size_t byte_count,
+size_t des_encrypt(uint64_t key, FILE* plaintext, size_t byte_count,
     uint8_t* ciphertext) {
+    rewind(plaintext);
     memset(ciphertext, 0, byte_count);
 
     uint64_t subkeys[16] = { 0 };
     des_generate_subkeys(key, subkeys);
 
     size_t offset = 0;
-    const size_t char_count = strlen(plaintext);
-
-    while (offset + 8 <= byte_count && offset < char_count + 1) {
+    while (offset <= byte_count) {
         uint8_t bytes[8] = { 0 };
+        const size_t read_count = fread(bytes, sizeof(uint8_t), 8, plaintext);
+        if (read_count == 0) {
+            break;
+        }
 
-        const size_t remaining = char_count > offset ? char_count - offset : 0;
-        const size_t copy_count = (remaining >= 8) ? 8 : remaining;
-        memcpy(bytes, plaintext + offset, copy_count);
-
-        const uint8_t pad_value = 8 - (uint8_t) copy_count;
-        for (size_t i = copy_count; i < 8; ++i) {
+        const uint8_t pad_value = 8 - (uint8_t) read_count;
+        for (size_t i = read_count; i < 8; ++i) {
             bytes[i] = pad_value;
         }
 
@@ -367,14 +365,15 @@ size_t des_encrypt(uint64_t key, const char* plaintext, size_t byte_count,
  * using the key and placed into the plaintext buffer.
  *
  * \param[in] key Encryption key used to generate subkeys.
- * \param[in] ciphertext_count Number of bytes in ciphertext.
- * \param[in] ciphertext Data to be decrypted.
- * \param[in] plaintext_count Number of bytes in plaintext.
+ * \param[in] ciphertext File to be decrypted.
+ * \param[in] byte_count Number of bytes in plaintext.
  * \param[out] plaintext Decrypted data.
+ * \return Number of decrypted bytes.
  */
-void des_decrypt(uint64_t key, size_t ciphertext_count, uint8_t* ciphertext,
-    size_t plaintext_count, char* plaintext) {
-    memset(plaintext, 0, plaintext_count);
+size_t des_decrypt(uint64_t key, FILE* ciphertext, size_t byte_count,
+    uint8_t* plaintext) {
+    rewind(ciphertext);
+    memset(plaintext, 0, byte_count);
 
     uint64_t subkeys[16] = { 0 };
     des_generate_subkeys(key, subkeys);
@@ -386,9 +385,12 @@ void des_decrypt(uint64_t key, size_t ciphertext_count, uint8_t* ciphertext,
     }
 
     size_t offset = 0;
-    while (offset + 8 <= plaintext_count && offset < ciphertext_count) {
+    while (offset <= byte_count) {
         uint8_t bytes[8] = { 0 };
-        memcpy(bytes, ciphertext + offset, 8);
+        const size_t read_count = fread(bytes, sizeof(uint8_t), 8, ciphertext);
+        if (read_count == 0) {
+            break;
+        }
 
         const uint64_t block = des_construct_block(bytes);
         const uint64_t decrypted = des(subkeys, block);
@@ -399,4 +401,13 @@ void des_decrypt(uint64_t key, size_t ciphertext_count, uint8_t* ciphertext,
 
         offset += 8;
     }
+
+    if (offset > 0) {
+        const uint8_t pad_value = plaintext[offset - 1];
+        if (pad_value > 0 && pad_value <= 8) {
+            offset -= pad_value;
+        }
+    }
+
+    return offset;
 }
