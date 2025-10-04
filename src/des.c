@@ -335,12 +335,9 @@ size_t des_encrypt(uint64_t key, FILE* plaintext, size_t byte_count,
     des_generate_subkeys(key, subkeys);
 
     size_t offset = 0;
-    while (offset <= byte_count) {
+    while (offset + 8 <= byte_count) {
         uint8_t bytes[8] = { 0 };
         const size_t read_count = fread(bytes, sizeof(uint8_t), 8, plaintext);
-        if (read_count == 0) {
-            break;
-        }
 
         const uint8_t pad_value = 8 - (uint8_t) read_count;
         for (size_t i = read_count; i < 8; ++i) {
@@ -355,6 +352,10 @@ size_t des_encrypt(uint64_t key, FILE* plaintext, size_t byte_count,
         }
 
         offset += 8;
+
+        if (read_count < 8) {
+            break;
+        }
     }
 
     return offset;
@@ -385,7 +386,7 @@ size_t des_decrypt(uint64_t key, FILE* ciphertext, size_t byte_count,
     }
 
     size_t offset = 0;
-    while (offset <= byte_count) {
+    while (offset + 8 <= byte_count) {
         uint8_t bytes[8] = { 0 };
         const size_t read_count = fread(bytes, sizeof(uint8_t), 8, ciphertext);
         if (read_count == 0) {

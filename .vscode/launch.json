@@ -29,7 +29,8 @@
             "request": "launch",
             "program": "${workspaceFolder}/bin/${input:configuration}/${input:platform}/des.exe",
             "args": [
-                "dec",
+                "-m",
+                "enc",
                 "-k",
                 "0x0123456789ABCDEF",
                 "-i",
@@ -49,6 +50,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/bin/${input:configuration}/${input:platform}/des",
             "args": [
+                "-m",
                 "enc",
                 "-k",
                 "0x0123456789ABCDEF",

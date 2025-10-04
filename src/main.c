@@ -30,22 +30,26 @@ int main(int argc, const char** argv) {
     FILE* out_file = NULL;
 
     for (int i = 1; i < argc; ++i) {
-        if (strcmp(argv[i], "enc") == 0) {
+        if (strcmp(argv[i], "-m") == 0) {
             if (mode != UNDEFINED) {
                 fprintf(stderr, "[ERROR] Multiple mode values were given.\n");
                 exit = true;
                 break;
-            }
+            } else if (i + 1 < argc) {
+                if (strcmp(argv[i + 1], "enc") == 0) {
+                    mode = ENCRYPT;
+                } else if (strcmp(argv[i + 1], "dec") == 0) {
+                    mode = DECRYPT;
+                } else {
+                    fprintf(stderr, "[ERROR] Mode is invalid\n");
+                }
 
-            mode = ENCRYPT;
-        } else if (strcmp(argv[i], "dec") == 0) {
-            if (mode != UNDEFINED) {
-                fprintf(stderr, "[ERROR] Multiple mode values were given.\n");
+                ++i;
+            } else {
+                fprintf(stderr, "[ERROR] Missing mode value after -m.\n");
                 exit = true;
                 break;
             }
-
-            mode = DECRYPT;
         } else if (strcmp(argv[i], "-k") == 0) {
             if (set_key) {
                 fprintf(stderr, "[ERROR] Multiple key values were given.\n");
@@ -143,7 +147,7 @@ int main(int argc, const char** argv) {
     switch (mode) {
     case ENCRYPT:
         fseek(in_file, 0, SEEK_END);
-        byte_count = ftell(in_file);
+        byte_count = ((ftell(in_file) / 8) + 1) * 8;
         uint8_t* ciphertext = malloc(byte_count);
         if (!ciphertext) {
             fprintf(stderr,
