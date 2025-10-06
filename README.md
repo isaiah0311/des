@@ -1,6 +1,9 @@
 # DES
 An implementation of DES in C.
 
+## Overview
+Encrypts and decrypts files using DES in either ECB or CBC mode.
+
 ## Project Structure
 ```text
 ├── .vscode                    <- Settings and configurations
@@ -59,16 +62,19 @@ Launch" to use GDB from the drop-down menu.
 5. Select a platform.
 ### Command Line
 1. Navigate to the root of the project.
-2. Run `bin\{ debug | release }\{ x86 | x64 }\des.exe -m { enc | dec } -i
-input_file [ -o output_file ]` if you are on Windows or `./bin/{ debug | release
-}\{ x86 | x64 }/des -m { enc | dec } -i input_file [ -o output_file ]` if you
-are on Linux.
+2. Run `bin\{ debug | release }\{ x86 | x64 }\des.exe [ -d { enc | dec } ]
+[ -m { ebc | cbc } ] -k key [ -v iv ] -i input_file [ -o output_file ]` if you
+are on Windows or `./bin/{ debug | release }\{ x86 | x64 }/des
+[ -d { enc | dec } ] [ -m { ebc | cbc } ] [ -v iv ] -i input_file
+[ -o output_file ]` if you are on Linux.
 
 
 **Note:** A plaintext and a ciphertext file has been provided in the resource
-folder. If no output file is given, the program will print the output instead.
-If run in VS Code, the program encrypts res/plaintext.txt and places the output
-into res/ciphertext.des.
+folder. If no direction is given, encryption is assumed. If no mode is given,
+EBC is assumed. If no output file is given, the program will print the output
+instead. If no IV is provided in CBC mode, one is generated at random. If run in
+VS Code, the program encrypts res/plaintext.txt and places the output into
+res/ciphertext.des using a default key.
 
 ## License
 This project is licensed under the [MIT License](LICENSE).

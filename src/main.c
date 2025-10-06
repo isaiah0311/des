@@ -20,33 +20,63 @@
  * \return Exit code.
  */
 int main(int argc, const char** argv) {
-    enum mode { UNDEFINED, ENCRYPT, DECRYPT };
+    enum direction {
+        DIRECTION_UNDEFINED,
+        DIRECTION_ENCRYPT,
+        DIRECTION_DECRYPT
+    };
+
+    enum mode { MODE_UNDEFINED, MODE_EBC, MODE_CBC };
 
     bool exit = false;
-    enum mode mode = UNDEFINED;
+    enum direction direction = DIRECTION_UNDEFINED;
+    enum mode mode = MODE_UNDEFINED;
     uint64_t key = 0;
     bool set_key = false;
+    uint64_t iv = 0;
+    bool set_iv = false;
     FILE* in_file = NULL;
     FILE* out_file = NULL;
 
     for (int i = 1; i < argc; ++i) {
-        if (strcmp(argv[i], "-m") == 0) {
-            if (mode != UNDEFINED) {
-                fprintf(stderr, "[ERROR] Multiple mode values were given.\n");
+        if (strcmp(argv[i], "-d") == 0) {
+            if (direction != DIRECTION_UNDEFINED) {
+                fprintf(stderr,
+                    "[ERROR] Multiple direction values were given.\n");
                 exit = true;
                 break;
             } else if (i + 1 < argc) {
                 if (strcmp(argv[i + 1], "enc") == 0) {
-                    mode = ENCRYPT;
+                    direction = DIRECTION_ENCRYPT;
                 } else if (strcmp(argv[i + 1], "dec") == 0) {
-                    mode = DECRYPT;
+                    direction = DIRECTION_DECRYPT;
+                } else {
+                    fprintf(stderr, "[ERROR] Direction is invalid\n");
+                }
+
+                ++i;
+            } else {
+                fprintf(stderr, "[ERROR] Missing direction value after -m.\n");
+                exit = true;
+                break;
+            }
+        } else if (strcmp(argv[i], "-m") == 0) {
+            if (mode != MODE_UNDEFINED) {
+                fprintf(stderr, "[ERROR] Multiple mode values were given.\n");
+                exit = true;
+                break;
+            } else if (i + 1 < argc) {
+                if (strcmp(argv[i + 1], "ebc") == 0) {
+                    mode = MODE_EBC;
+                } else if (strcmp(argv[i + 1], "cbc") == 0) {
+                    mode = MODE_CBC;
                 } else {
                     fprintf(stderr, "[ERROR] Mode is invalid\n");
                 }
 
                 ++i;
             } else {
-                fprintf(stderr, "[ERROR] Missing mode value after -m.\n");
+                fprintf(stderr, "[ERROR] Missing direction value after -m.\n");
                 exit = true;
                 break;
             }
@@ -68,6 +98,27 @@ int main(int argc, const char** argv) {
                 ++i;
             } else {
                 fprintf(stderr, "[ERROR] Missing key value after -k.\n");
+                exit = true;
+                break;
+            }
+        } else if (strcmp(argv[i], "-v") == 0) {
+            if (set_iv) {
+                fprintf(stderr, "[ERROR] Multiple IV values were given.\n");
+                exit = true;
+                break;
+            } else if (i + 1 < argc) {
+                char* endptr = NULL;
+                iv = strtoull(argv[i + 1], &endptr, 16);
+                if (endptr == argv[i + 1]) {
+                    fprintf(stderr, "[ERROR] IV is not a valid number.\n");
+                    exit = true;
+                    break;
+                }
+
+                set_iv = true;
+                ++i;
+            } else {
+                fprintf(stderr, "[ERROR] Missing IV value after -v.\n");
                 exit = true;
                 break;
             }
@@ -117,10 +168,7 @@ int main(int argc, const char** argv) {
     }
 
     if (!exit) {
-        if (mode == UNDEFINED) {
-            fprintf(stderr, "[ERROR] No mode was given.\n");
-            exit = true;
-        } else if (!set_key) {
+        if (!set_key) {
             fprintf(stderr, "[ERROR] No key was given.\n");
             exit = true;
         } else if (!in_file) {
@@ -141,11 +189,18 @@ int main(int argc, const char** argv) {
         return EXIT_FAILURE;
     }
 
+    if (MODE_CBC && !set_iv) {
+        for (int i = 0; i < 4; ++i) {
+            iv = (iv << 16) | (rand() & 0xFFFF);
+        }
+    }
+
     long byte_count = 0;
     size_t bytes_written = 0;
 
-    switch (mode) {
-    case ENCRYPT:
+    switch (direction) {
+    case DIRECTION_UNDEFINED:
+    case DIRECTION_ENCRYPT:
         fseek(in_file, 0, SEEK_END);
         byte_count = ((ftell(in_file) / 8) + 1) * 8;
         uint8_t* ciphertext = malloc(byte_count);
@@ -157,7 +212,17 @@ int main(int argc, const char** argv) {
             return EXIT_FAILURE;
         }
 
-        bytes_written = des_encrypt(key, in_file, byte_count, ciphertext);
+        switch (mode) {
+        case MODE_UNDEFINED:
+        case MODE_EBC:
+            bytes_written = des_ebc_encrypt(key, in_file, byte_count,
+                ciphertext);
+            break;
+        case MODE_CBC:
+            bytes_written = des_cbc_encrypt(key, iv, in_file, byte_count,
+                ciphertext);
+            break;
+        }
 
         if (out_file) {
             fwrite(ciphertext, sizeof(uint8_t), bytes_written, out_file);
@@ -169,7 +234,7 @@ int main(int argc, const char** argv) {
         }
 
         break;
-    case DECRYPT:
+    case DIRECTION_DECRYPT:
         fseek(in_file, 0, SEEK_END);
         byte_count = ftell(in_file);
         uint8_t* plaintext = malloc(byte_count);
@@ -181,7 +246,17 @@ int main(int argc, const char** argv) {
             return EXIT_FAILURE;
         }
 
-        bytes_written = des_decrypt(key, in_file, byte_count, plaintext);
+        switch (mode) {
+        case MODE_UNDEFINED:
+        case MODE_EBC:
+            bytes_written = des_ebc_decrypt(key, in_file, byte_count,
+                plaintext);
+            break;
+        case MODE_CBC:
+            bytes_written = des_cbc_decrypt(key, iv, in_file, byte_count,
+                plaintext);
+            break;
+        }
 
         if (out_file) {
             fwrite(plaintext, sizeof(uint8_t), bytes_written, out_file);
@@ -192,8 +267,6 @@ int main(int argc, const char** argv) {
             }
         }
 
-        break;
-    default:
         break;
     }
 

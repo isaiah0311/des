@@ -326,7 +326,7 @@ uint64_t des(const uint64_t subkeys[16], uint64_t block) {
  * \param[out] ciphertext Encrypted data.
  * \return Number of encrypted bytes.
  */
-size_t des_encrypt(uint64_t key, FILE* plaintext, size_t byte_count,
+size_t des_ebc_encrypt(uint64_t key, FILE* plaintext, size_t byte_count,
     uint8_t* ciphertext) {
     rewind(plaintext);
     memset(ciphertext, 0, byte_count);
@@ -362,6 +362,56 @@ size_t des_encrypt(uint64_t key, FILE* plaintext, size_t byte_count,
 }
 
 /**
+ * Splits the plaintext into 64-bit blocks. Each of the blocks are XOR'd with
+ * the previous block, or the IV if it's the first block. Then the blocks are
+ * encrypted using the key and placed into the ciphertext buffer.
+ *
+ * \param[in] key Encryption key used to generate subkeys.
+ * \param[in] iv Initialization vector.
+ * \param[in] plaintext File to be encrypted.
+ * \param[in] byte_count Number of bytes in ciphertext.
+ * \param[out] ciphertext Encrypted data.
+ * \return Number of encrypted bytes.
+ */
+size_t des_cbc_encrypt(uint64_t key, uint64_t iv, FILE* plaintext,
+    size_t byte_count, uint8_t* ciphertext) {
+    rewind(plaintext);
+    memset(ciphertext, 0, byte_count);
+
+    uint64_t subkeys[16] = { 0 };
+    des_generate_subkeys(key, subkeys);
+
+    uint64_t previous = iv;
+
+    size_t offset = 0;
+    while (offset + 8 <= byte_count) {
+        uint8_t bytes[8] = { 0 };
+        const size_t read_count = fread(bytes, sizeof(uint8_t), 8, plaintext);
+
+        const uint8_t pad_value = 8 - (uint8_t) read_count;
+        for (size_t i = read_count; i < 8; ++i) {
+            bytes[i] = pad_value;
+        }
+
+        const uint64_t block = des_construct_block(bytes);
+        const uint64_t encrypted = des(subkeys, block ^ previous);
+        previous = encrypted;
+
+        for (int i = 0; i < 8; ++i) {
+            ciphertext[offset + i] = (encrypted >> (56 - i * 8)) & 0xFF;
+        }
+
+        offset += 8;
+
+        if (read_count < 8) {
+            break;
+        }
+    }
+
+    return offset;
+}
+
+/**
  * Splits the ciphertext into 64-bit blocks. Each of the blocks are decrypted
  * using the key and placed into the plaintext buffer.
  *
@@ -371,7 +421,7 @@ size_t des_encrypt(uint64_t key, FILE* plaintext, size_t byte_count,
  * \param[out] plaintext Decrypted data.
  * \return Number of decrypted bytes.
  */
-size_t des_decrypt(uint64_t key, FILE* ciphertext, size_t byte_count,
+size_t des_ebc_decrypt(uint64_t key, FILE* ciphertext, size_t byte_count,
     uint8_t* plaintext) {
     rewind(ciphertext);
     memset(plaintext, 0, byte_count);
@@ -395,6 +445,63 @@ size_t des_decrypt(uint64_t key, FILE* ciphertext, size_t byte_count,
 
         const uint64_t block = des_construct_block(bytes);
         const uint64_t decrypted = des(subkeys, block);
+
+        for (int i = 0; i < 8; ++i) {
+            plaintext[offset + i] = (decrypted >> (56 - i * 8)) & 0xFF;
+        }
+
+        offset += 8;
+    }
+
+    if (offset > 0) {
+        const uint8_t pad_value = plaintext[offset - 1];
+        if (pad_value > 0 && pad_value <= 8) {
+            offset -= pad_value;
+        }
+    }
+
+    return offset;
+}
+
+/**
+ * Splits the ciphertext into 64-bit blocks. Each of the blocks are XOR'd with
+ * the previous block, or the IV if it's the first block. Each of the blocks are
+ * decrypted using the key and placed into the plaintext buffer.
+ *
+ * \param[in] key Encryption key used to generate subkeys.
+ * \param[in] iv Initialization vector.
+ * \param[in] ciphertext File to be decrypted.
+ * \param[in] byte_count Number of bytes in plaintext.
+ * \param[out] plaintext Decrypted data.
+ * \return Number of decrypted bytes.
+ */
+size_t des_cbc_decrypt(uint64_t key, uint64_t iv, FILE* ciphertext,
+    size_t byte_count, uint8_t* plaintext) {
+    rewind(ciphertext);
+    memset(plaintext, 0, byte_count);
+
+    uint64_t subkeys[16] = { 0 };
+    des_generate_subkeys(key, subkeys);
+
+    for (int i = 0; i < 8; ++i) {
+        uint64_t subkey = subkeys[i];
+        subkeys[i] = subkeys[15 - i];
+        subkeys[15 - i] = subkey;
+    }
+
+    uint64_t previous = iv;
+
+    size_t offset = 0;
+    while (offset + 8 <= byte_count) {
+        uint8_t bytes[8] = { 0 };
+        const size_t read_count = fread(bytes, sizeof(uint8_t), 8, ciphertext);
+        if (read_count == 0) {
+            break;
+        }
+
+        const uint64_t block = des_construct_block(bytes);
+        const uint64_t decrypted = des(subkeys, block) ^ previous;
+        previous = block;
 
         for (int i = 0; i < 8; ++i) {
             plaintext[offset + i] = (decrypted >> (56 - i * 8)) & 0xFF;
