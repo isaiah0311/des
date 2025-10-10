@@ -14,7 +14,7 @@
 
 /**
  * Encrypts a file using DES in EBC mode.
- * 
+ *
  * \param[in] key Encryption key used to generate subkeys.
  * \param[in] plaintext File to be encrypted.
  * \param[in] byte_count Number of bytes in ciphertext.
@@ -26,7 +26,7 @@ size_t des_ebc_encrypt(uint64_t key, FILE* plaintext, size_t byte_count,
 
 /**
  * Encrypts a file using DES in CBC mode.
- * 
+ *
  * \param[in] key Encryption key used to generate subkeys.
  * \param[in] iv Initialization vector.
  * \param[in] plaintext File to be encrypted.

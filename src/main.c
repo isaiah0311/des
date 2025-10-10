@@ -206,8 +206,8 @@ int main(int argc, const char** argv) {
         uint8_t* ciphertext = malloc(byte_count);
         if (!ciphertext) {
             fprintf(stderr,
-                "[ERROR] Failed to allocated memory for the "
-                "ciphertext buffer.\n");
+                "[ERROR] Failed to allocated memory for the ciphertext "
+                "buffer.\n");
             fclose(in_file);
             return EXIT_FAILURE;
         }
@@ -231,6 +231,8 @@ int main(int argc, const char** argv) {
             for (size_t i = 0; i < bytes_written; ++i) {
                 printf("%02X", ciphertext[i]);
             }
+
+            printf("\n");
         }
 
         break;
@@ -240,8 +242,8 @@ int main(int argc, const char** argv) {
         uint8_t* plaintext = malloc(byte_count);
         if (!plaintext) {
             fprintf(stderr,
-                "[ERROR] Failed to allocated memory for the "
-                "plaintext buffer.\n");
+                "[ERROR] Failed to allocated memory for the plaintext "
+                "buffer.\n");
             fclose(in_file);
             return EXIT_FAILURE;
         }
@@ -265,6 +267,8 @@ int main(int argc, const char** argv) {
             for (size_t i = 0; i < bytes_written; ++i) {
                 printf("%02X", plaintext[i]);
             }
+
+            printf("\n");
         }
 
         break;
