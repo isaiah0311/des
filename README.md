@@ -65,7 +65,7 @@ Launch" to use GDB from the drop-down menu.
 2. Run `bin\{ debug | release }\{ x86 | x64 }\des.exe [ -d { enc | dec } ]
 [ -m { ebc | cbc } ] -k key [ -v iv ] -i input_file [ -o output_file ]` if you
 are on Windows or `./bin/{ debug | release }\{ x86 | x64 }/des
-[ -d { enc | dec } ] [ -m { ebc | cbc } ] [ -v iv ] -i input_file
+[ -d { enc | dec } ] [ -m { ebc | cbc } ] -k key [ -v iv ] -i input_file
 [ -o output_file ]` if you are on Linux.
 
 
