@@ -26,7 +26,7 @@ int main(int argc, const char** argv) {
         DIRECTION_DECRYPT
     };
 
-    enum mode { MODE_UNDEFINED, MODE_EBC, MODE_CBC };
+    enum mode { MODE_UNDEFINED, MODE_ECB, MODE_CBC };
 
     bool exit = false;
     enum direction direction = DIRECTION_UNDEFINED;
@@ -66,8 +66,8 @@ int main(int argc, const char** argv) {
                 exit = true;
                 break;
             } else if (i + 1 < argc) {
-                if (strcmp(argv[i + 1], "ebc") == 0) {
-                    mode = MODE_EBC;
+                if (strcmp(argv[i + 1], "ecb") == 0) {
+                    mode = MODE_ECB;
                 } else if (strcmp(argv[i + 1], "cbc") == 0) {
                     mode = MODE_CBC;
                 } else {
@@ -214,8 +214,8 @@ int main(int argc, const char** argv) {
 
         switch (mode) {
         case MODE_UNDEFINED:
-        case MODE_EBC:
-            bytes_written = des_ebc_encrypt(key, in_file, byte_count,
+        case MODE_ECB:
+            bytes_written = des_ecb_encrypt(key, in_file, byte_count,
                 ciphertext);
             break;
         case MODE_CBC:
@@ -250,8 +250,8 @@ int main(int argc, const char** argv) {
 
         switch (mode) {
         case MODE_UNDEFINED:
-        case MODE_EBC:
-            bytes_written = des_ebc_decrypt(key, in_file, byte_count,
+        case MODE_ECB:
+            bytes_written = des_ecb_decrypt(key, in_file, byte_count,
                 plaintext);
             break;
         case MODE_CBC:

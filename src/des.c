@@ -326,7 +326,7 @@ uint64_t des(const uint64_t subkeys[16], uint64_t block) {
  * \param[out] ciphertext Encrypted data.
  * \return Number of encrypted bytes.
  */
-size_t des_ebc_encrypt(uint64_t key, FILE* plaintext, size_t byte_count,
+size_t des_ecb_encrypt(uint64_t key, FILE* plaintext, size_t byte_count,
     uint8_t* ciphertext) {
     rewind(plaintext);
     memset(ciphertext, 0, byte_count);
@@ -421,7 +421,7 @@ size_t des_cbc_encrypt(uint64_t key, uint64_t iv, FILE* plaintext,
  * \param[out] plaintext Decrypted data.
  * \return Number of decrypted bytes.
  */
-size_t des_ebc_decrypt(uint64_t key, FILE* ciphertext, size_t byte_count,
+size_t des_ecb_decrypt(uint64_t key, FILE* ciphertext, size_t byte_count,
     uint8_t* plaintext) {
     rewind(ciphertext);
     memset(plaintext, 0, byte_count);

@@ -13,7 +13,7 @@
 #include <stdio.h>
 
 /**
- * Encrypts a file using DES in EBC mode.
+ * Encrypts a file using DES in ECB mode.
  *
  * \param[in] key Encryption key used to generate subkeys.
  * \param[in] plaintext File to be encrypted.
@@ -21,7 +21,7 @@
  * \param[out] ciphertext Encrypted data.
  * \return Number of encrypted bytes.
  */
-size_t des_ebc_encrypt(uint64_t key, FILE* plaintext, size_t byte_count,
+size_t des_ecb_encrypt(uint64_t key, FILE* plaintext, size_t byte_count,
     uint8_t* ciphertext);
 
 /**
@@ -38,7 +38,7 @@ size_t des_cbc_encrypt(uint64_t key, uint64_t iv, FILE* plaintext,
     size_t byte_count, uint8_t* ciphertext);
 
 /**
- * Decrypts a file using DES in EBC mode.
+ * Decrypts a file using DES in ECB mode.
  *
  * \param[in] key Encryption key used to generate subkeys.
  * \param[in] ciphertext File to be decrypted.
@@ -46,7 +46,7 @@ size_t des_cbc_encrypt(uint64_t key, uint64_t iv, FILE* plaintext,
  * \param[out] plaintext Decrypted data.
  * \return Number of decrypted bytes.
  */
-size_t des_ebc_decrypt(uint64_t key, FILE* ciphertext, size_t byte_count,
+size_t des_ecb_decrypt(uint64_t key, FILE* ciphertext, size_t byte_count,
     uint8_t* plaintext);
 
 /**
