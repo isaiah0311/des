@@ -10,6 +10,7 @@ Encrypts and decrypts files using DES in either ECB or CBC mode.
 ├── build                      <- Compiled binaries and build artifacts
 ├── res                        <- Resource files
 ├── src                        <- Source files
+├── .gitattributes
 ├── .gitignore
 ├── CMakeLists.txt
 ├── LICENSE
